@@ -1,0 +1,216 @@
+# https://taskfile.dev
+version: '3'
+
+vars:
+  COMPOSE_FILE: docker-compose.yml
+  PROJECT_NAME: ember
+
+silent: true
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # ============================================================================
+  # Stack Operations
+  # ============================================================================
+
+  up:
+    desc: Start the observability stack
+    cmds:
+      - echo "🔥 Starting Ember stack..."
+      - docker compose -p {{.PROJECT_NAME}} up -d
+      - echo "✅ Stack started. Grafana at http://localhost:3000"
+
+  down:
+    desc: Stop the observability stack
+    cmds:
+      - echo "🛑 Stopping Ember stack..."
+      - docker compose -p {{.PROJECT_NAME}} down
+      - echo "✅ Stack stopped"
+
+  restart:
+    desc: Restart the observability stack
+    cmds:
+      - task: down
+      - task: up
+
+  pull:
+    desc: Pull latest images
+    cmds:
+      - echo "📦 Pulling latest images..."
+      - docker compose -p {{.PROJECT_NAME}} pull
+      - echo "✅ Images updated. Run 'task restart' to apply"
+
+  # ============================================================================
+  # Status & Logs
+  # ============================================================================
+
+  status:
+    desc: Show container status
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} ps
+
+  logs:
+    desc: Follow all container logs
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} logs -f
+
+  logs:prometheus:
+    desc: Follow Prometheus logs
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} logs -f prometheus
+
+  logs:grafana:
+    desc: Follow Grafana logs
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} logs -f grafana
+
+  logs:node-exporter:
+    desc: Follow node-exporter logs
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} logs -f node-exporter
+
+  logs:cadvisor:
+    desc: Follow cAdvisor logs
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} logs -f cadvisor
+
+  logs:process-exporter:
+    desc: Follow process-exporter logs
+    cmds:
+      - docker compose -p {{.PROJECT_NAME}} logs -f process-exporter
+
+  # ============================================================================
+  # Health Checks
+  # ============================================================================
+
+  health:
+    desc: Check health of all services
+    cmds:
+      - echo "🏥 Checking service health..."
+      - |
+        echo -n "Prometheus:        "; curl -sf http://localhost:9090/-/healthy > /dev/null && echo "✅ UP" || echo "❌ DOWN"
+        echo -n "Grafana:           "; curl -sf http://localhost:3000/api/health > /dev/null && echo "✅ UP" || echo "❌ DOWN"
+        echo -n "Node Exporter:     "; curl -sf http://localhost:9100/metrics > /dev/null && echo "✅ UP" || echo "❌ DOWN"
+        echo -n "cAdvisor:          "; curl -sf http://localhost:8080/healthz > /dev/null && echo "✅ UP" || echo "❌ DOWN"
+        echo -n "Process Exporter:  "; curl -sf http://localhost:9256/metrics > /dev/null && echo "✅ UP" || echo "❌ DOWN"
+
+  targets:
+    desc: Show Prometheus scrape targets status
+    cmds:
+      - echo "🎯 Prometheus Targets:"
+      - |
+        curl -sf http://localhost:9090/api/v1/targets | \
+          jq -r '.data.activeTargets[] | "\(.labels.job): \(.health) (\(.lastScrape | split("T")[0]))"' 2>/dev/null || \
+          echo "❌ Cannot reach Prometheus"
+
+  # ============================================================================
+  # Maintenance
+  # ============================================================================
+
+  clean:
+    desc: Stop stack and remove volumes (DATA LOSS!)
+    prompt: This will DELETE all Prometheus and Grafana data. Continue?
+    cmds:
+      - echo "🗑️  Removing stack and volumes..."
+      - docker compose -p {{.PROJECT_NAME}} down -v
+      - echo "✅ Stack and data removed"
+
+  prune:
+    desc: Remove unused Docker resources
+    cmds:
+      - echo "🧹 Pruning unused Docker resources..."
+      - docker system prune -f
+      - echo "✅ Cleanup complete"
+
+  stats:
+    desc: Show container resource usage
+    cmds:
+      - docker stats --no-stream $(docker compose -p {{.PROJECT_NAME}} ps -q)
+
+  # ============================================================================
+  # Quick Access
+  # ============================================================================
+
+  open:grafana:
+    desc: Open Grafana in browser
+    cmds:
+      - echo "🌐 Opening Grafana..."
+      - xdg-open http://localhost:3000 2>/dev/null || open http://localhost:3000 2>/dev/null || echo "Open http://localhost:3000"
+
+  open:prometheus:
+    desc: Open Prometheus in browser
+    cmds:
+      - echo "🌐 Opening Prometheus..."
+      - xdg-open http://localhost:9090 2>/dev/null || open http://localhost:9090 2>/dev/null || echo "Open http://localhost:9090"
+
+  # ============================================================================
+  # Setup
+  # ============================================================================
+
+  init:
+    desc: Initialize environment (create .env from example)
+    cmds:
+      - |
+        if [ ! -f .env ]; then
+          echo "🔧 Creating .env file with secure password..."
+          echo "GF_SECURITY_ADMIN_PASSWORD=$(openssl rand -base64 24)" > .env
+          echo "✅ Created .env with generated password"
+          echo "📝 Password: $(grep GF_SECURITY_ADMIN_PASSWORD .env | cut -d= -f2)"
+        else
+          echo "ℹ️  .env already exists"
+        fi
+    status:
+      - test -f .env
+
+  setup:
+    desc: Full setup - init and start stack
+    cmds:
+      - task: init
+      - task: up
+      - cmd: |
+          echo ""
+          echo "🔥 Ember is ready!"
+          echo "   Grafana:    http://localhost:3000 (admin / see .env)"
+          echo "   Prometheus: http://localhost:9090"
+
+  # ============================================================================
+  # Troubleshooting
+  # ============================================================================
+
+  debug:metrics:
+    desc: Test metric endpoints directly
+    cmds:
+      - echo "📊 Testing metric endpoints..."
+      - echo ""
+      - echo "=== Node Exporter (first 10 lines) ==="
+      - curl -sf http://localhost:9100/metrics | head -10 || echo "❌ Cannot reach node-exporter"
+      - echo ""
+      - echo "=== cAdvisor container count ==="
+      - curl -sf http://localhost:8080/metrics | grep -c "^container_" || echo "❌ Cannot reach cAdvisor"
+      - echo ""
+      - echo "=== Process Exporter process count ==="
+      - curl -sf http://localhost:9256/metrics | grep -c "^namedprocess_" || echo "❌ Cannot reach process-exporter"
+
+  debug:thermals:
+    desc: Check thermal/hwmon metrics availability
+    cmds:
+      - echo "🌡️  Checking thermal metrics..."
+      - echo ""
+      - echo "=== hwmon temperatures ==="
+      - curl -sf http://localhost:9100/metrics | grep "node_hwmon_temp_celsius" | head -5 || echo "No hwmon temps found"
+      - echo ""
+      - echo "=== thermal zones ==="
+      - curl -sf http://localhost:9100/metrics | grep "node_thermal_zone_temp" | head -5 || echo "No thermal zones found"
+      - echo ""
+      - echo "=== fan speeds ==="
+      - curl -sf http://localhost:9100/metrics | grep "node_hwmon_fan_rpm" | head -5 || echo "No fan RPM found"
+
+  debug:containers:
+    desc: Check container metrics availability
+    cmds:
+      - echo "📦 Checking container metrics..."
+      - curl -sf http://localhost:8080/metrics | grep "container_cpu_usage_seconds_total{" | grep -v "^#" | head -10 || echo "❌ No container metrics"
