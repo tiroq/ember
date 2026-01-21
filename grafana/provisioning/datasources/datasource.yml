@@ -1,0 +1,20 @@
+# Ember Grafana Datasource Provisioning
+# Auto-configure Prometheus as the default datasource
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      manageAlerts: false
+      prometheusType: Prometheus
+      prometheusVersion: 2.51.0
+      cacheLevel: 'None'
+      disableRecordingRules: true
+      incrementalQueryOverlapWindow: 10m
