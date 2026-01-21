@@ -22,7 +22,7 @@ tasks:
     cmds:
       - echo "🔥 Starting Ember stack..."
       - docker compose -p {{.PROJECT_NAME}} up -d
-      - echo "✅ Stack started. Grafana at http://localhost:3000"
+      - echo "✅ Stack started. Grafana at http://localhost:3001"
 
   down:
     desc: Stop the observability stack
@@ -93,7 +93,7 @@ tasks:
       - echo "🏥 Checking service health..."
       - |
         echo -n "Prometheus:        "; curl -sf http://localhost:9090/-/healthy > /dev/null && echo "✅ UP" || echo "❌ DOWN"
-        echo -n "Grafana:           "; curl -sf http://localhost:3000/api/health > /dev/null && echo "✅ UP" || echo "❌ DOWN"
+        echo -n "Grafana:           "; curl -sf http://localhost:3001/api/health > /dev/null && echo "✅ UP" || echo "❌ DOWN"
         echo -n "Node Exporter:     "; curl -sf http://localhost:9100/metrics > /dev/null && echo "✅ UP" || echo "❌ DOWN"
         echo -n "cAdvisor:          "; curl -sf http://localhost:8080/healthz > /dev/null && echo "✅ UP" || echo "❌ DOWN"
         echo -n "Process Exporter:  "; curl -sf http://localhost:9256/metrics > /dev/null && echo "✅ UP" || echo "❌ DOWN"
@@ -139,7 +139,7 @@ tasks:
     desc: Open Grafana in browser
     cmds:
       - echo "🌐 Opening Grafana..."
-      - xdg-open http://localhost:3000 2>/dev/null || open http://localhost:3000 2>/dev/null || echo "Open http://localhost:3000"
+      - xdg-open http://localhost:3001 2>/dev/null || open http://localhost:3001 2>/dev/null || echo "Open http://localhost:3001"
 
   open:prometheus:
     desc: Open Prometheus in browser
@@ -174,7 +174,7 @@ tasks:
       - cmd: |
           echo ""
           echo "🔥 Ember is ready!"
-          echo "   Grafana:    http://localhost:3000 (admin / see .env)"
+          echo "   Grafana:    http://localhost:3001 (admin / see .env)"
           echo "   Prometheus: http://localhost:9090"
 
   # ============================================================================
