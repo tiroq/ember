@@ -20,6 +20,20 @@ scrape_configs:
         target_label: __address__
         replacement: 'node-exporter:9100'
 
+  # cAdvisor - Container metrics (CPU, memory, restarts)
+  # 5s interval for container hot spot detection
+  - job_name: 'cadvisor'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance: 'ember-containers'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __address__
+        replacement: 'cadvisor:8080'
+
   # Prometheus self-monitoring
   - job_name: 'prometheus'
     scrape_interval: 15s
