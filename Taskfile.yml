@@ -18,11 +18,18 @@ tasks:
   # ============================================================================
 
   up:
-    desc: Start the observability stack
+    desc: Start the observability stack (with overrides if present)
     cmds:
       - echo "🔥 Starting Ember stack..."
       - docker compose -p {{.PROJECT_NAME}} up -d
       - echo "✅ Stack started. Grafana at http://localhost:3001"
+
+  up:standalone:
+    desc: Start stack WITHOUT override files (standalone mode)
+    cmds:
+      - echo "🔥 Starting Ember stack (standalone, no overrides)..."
+      - docker compose -p {{.PROJECT_NAME}} -f docker-compose.yml up -d
+      - echo "✅ Stack started in standalone mode"
 
   down:
     desc: Stop the observability stack
@@ -214,3 +221,14 @@ tasks:
     cmds:
       - echo "📦 Checking container metrics..."
       - curl -sf http://localhost:8080/metrics | grep "container_cpu_usage_seconds_total{" | grep -v "^#" | head -10 || echo "❌ No container metrics"
+
+  debug:external:
+    desc: Test connectivity to external services from Prometheus container
+    cmds:
+      - echo "🔗 Testing external service connectivity from Prometheus..."
+      - echo ""
+      - echo "=== Networks attached to ember-prometheus ==="
+      - docker inspect ember-prometheus --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$net}} {{end}}' 2>/dev/null || echo "❌ Container not running"
+      - echo ""
+      - echo "ℹ️  To test a specific service:"
+      - echo "   docker exec ember-prometheus wget -qO- http://<service>:<port>/metrics | head -20"
