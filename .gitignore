@@ -1,6 +1,10 @@
 # Environment files with secrets
 .env
 
+# Local override files (user-specific customizations)
+docker-compose.override.yml
+prometheus/prometheus.local.yml
+
 # Docker volumes (if stored locally)
 prometheus_data/
 grafana_data/
