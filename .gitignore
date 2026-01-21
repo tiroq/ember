@@ -1,0 +1,22 @@
+# Environment files with secrets
+.env
+
+# Docker volumes (if stored locally)
+prometheus_data/
+grafana_data/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Backup files
+*.bak
+*.backup
+
+# Log files
+*.log
+logs/
