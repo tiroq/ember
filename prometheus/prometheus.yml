@@ -1,0 +1,29 @@
+# Ember Prometheus Configuration
+# Local host observability - no remote write, no alerting
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Node Exporter - Host metrics (CPU, memory, disk, network, thermals)
+  # 5s interval for responsive thermal and CPU monitoring
+  - job_name: 'node-exporter'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'ember-host'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __address__
+        replacement: 'node-exporter:9100'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'ember-prometheus'
