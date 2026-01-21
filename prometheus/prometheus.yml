@@ -34,6 +34,20 @@ scrape_configs:
         target_label: __address__
         replacement: 'cadvisor:8080'
 
+  # Process Exporter - Per-process metrics
+  # 15s interval to reduce overhead
+  - job_name: 'process-exporter'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['process-exporter:9256']
+        labels:
+          instance: 'ember-processes'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __address__
+        replacement: 'process-exporter:9256'
+
   # Prometheus self-monitoring
   - job_name: 'prometheus'
     scrape_interval: 15s

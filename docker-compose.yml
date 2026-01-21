@@ -82,6 +82,28 @@ services:
     networks:
       - ember
 
+  process-exporter:
+    image: ncabatoff/process-exporter:0.8.2
+    container_name: ember-process-exporter
+    restart: unless-stopped
+    command:
+      - '--config.path=/config/process-exporter.yml'
+      - '--procfs=/host/proc'
+    ports:
+      - "127.0.0.1:9256:9256"
+    volumes:
+      - ./process-exporter/process-exporter.yml:/config/process-exporter.yml:ro
+      - /proc:/host/proc:ro
+    privileged: true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9256/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ember
+
 networks:
   ember:
     driver: bridge

@@ -1,0 +1,29 @@
+# Ember Process Exporter Configuration
+# Simple grouping by command name to avoid high cardinality
+# Captures per-process CPU and memory metrics
+
+process_names:
+  # Group all processes by their command name (executable basename)
+  # This provides visibility into resource usage without excessive cardinality
+  - name: "{{.Comm}}"
+    cmdline:
+      - '.+'
+
+  # Alternatively, you can define specific process groups for finer control:
+  # Uncomment and customize as needed
+  
+  # - name: "docker"
+  #   cmdline:
+  #     - 'dockerd|containerd|docker-proxy'
+  
+  # - name: "prometheus"
+  #   cmdline:
+  #     - 'prometheus'
+  
+  # - name: "grafana"
+  #   cmdline:
+  #     - 'grafana'
+  
+  # - name: "node_exporter"
+  #   cmdline:
+  #     - 'node_exporter'
