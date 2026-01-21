@@ -103,6 +103,64 @@ Expected output shows all 5 services as "healthy" or "running":
 
 > **Note**: All services bind to `127.0.0.1` (localhost only) by default for security.
 
+## External Application Integration
+
+Ember can scrape metrics from external applications running in Docker containers via an external Docker network. This is configured using override files that are gitignored, keeping the main Ember configuration clean.
+
+### Prerequisites
+
+- External application stack must be running
+- External Docker network must exist (e.g., `<app>_default`, `<app>_network`)
+
+### Setup
+
+1. **Verify external network exists**:
+   ```bash
+   docker network ls | grep <network-name>
+   ```
+
+2. **Configure the override files** (gitignored):
+   - `docker-compose.override.yml` - Adds external network connectivity
+   - `prometheus/prometheus.local.yml` - Adds scrape jobs for external services
+
+3. **Update network name** in `docker-compose.override.yml`:
+   ```yaml
+   networks:
+     <external-network-name>:
+       external: true
+   ```
+
+4. **Start Ember** (override auto-applied):
+   ```bash
+   docker compose up -d
+   ```
+
+5. **Start WITHOUT external integration** (ignore override):
+   ```bash
+   docker compose -f docker-compose.yml up -d
+   ```
+
+### Verify Targets
+
+1. Open http://localhost:9090/targets
+2. Look for your custom job targets
+3. **UP** = service is running and metrics are being scraped
+4. **DOWN** = service is not running (expected if external app is stopped)
+
+### Test Connectivity from Prometheus Container
+
+```bash
+# Replace <service-name> and <port> with actual values
+docker exec ember-prometheus wget -qO- http://<service-name>:<port>/metrics | head -20
+```
+
+### Troubleshooting
+
+If connectivity fails, verify:
+1. External stack is running: `docker ps | grep <app-name>`
+2. External network exists: `docker network ls | grep <network-name>`
+3. Ember is connected to the network: `docker network inspect <external-network-name>`
+
 ## Verification Steps
 
 ### Check Prometheus Targets
