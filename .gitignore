@@ -5,6 +5,10 @@
 docker-compose.override.yml
 prometheus/prometheus.local.yml
 
+# Alert rules (environment-specific, except example)
+prometheus/rules/*.rules.yml
+!prometheus/rules/example.rules.yml
+
 # Docker volumes (if stored locally)
 prometheus_data/
 grafana_data/
