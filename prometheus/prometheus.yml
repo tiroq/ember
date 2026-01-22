@@ -5,6 +5,10 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# Alert rules for external service monitoring
+rule_files:
+  - '/etc/prometheus/rules/*.rules.yml'
+
 scrape_configs:
   # Node Exporter - Host metrics (CPU, memory, disk, network, thermals)
   # 5s interval for responsive thermal and CPU monitoring
