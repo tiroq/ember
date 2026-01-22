@@ -161,6 +161,58 @@ If connectivity fails, verify:
 2. External network exists: `docker network ls | grep <network-name>`
 3. Ember is connected to the network: `docker network inspect <external-network-name>`
 
+### Adding Alert Rules
+
+Alert rules allow Prometheus to fire alerts when conditions are met (displayed in Prometheus UI, no notifications without Alertmanager).
+
+1. **Copy the example rules file:**
+   ```bash
+   cp prometheus/rules/example.rules.yml prometheus/rules/my-app.rules.yml
+   ```
+
+2. **Edit and uncomment rules** in `prometheus/rules/my-app.rules.yml`
+
+3. **Validate rules:**
+   ```bash
+   docker run --rm --entrypoint promtool \
+     -v "$(pwd)/prometheus:/etc/prometheus:ro" \
+     prom/prometheus:v2.51.0 check config /etc/prometheus/prometheus.yml
+   ```
+
+4. **Reload Prometheus** (no restart needed):
+   ```bash
+   curl -X POST http://localhost:9090/-/reload
+   ```
+
+5. **View alerts:** http://localhost:9090/alerts
+
+> **Note**: Rules files (`*.rules.yml`) are gitignored except `example.rules.yml`. This allows environment-specific alert configurations.
+
+### Common Alert Patterns
+
+```yaml
+# Service down
+- alert: ServiceDown
+  expr: up{job="my-service"} == 0
+  for: 1m
+  labels:
+    severity: critical
+
+# High latency (histogram)
+- alert: HighLatency
+  expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 1
+  for: 5m
+  labels:
+    severity: warning
+
+# Message queue backlog (NATS JetStream example)
+- alert: ConsumerBacklogHigh
+  expr: jetstream_consumer_num_pending > 1000
+  for: 5m
+  labels:
+    severity: warning
+```
+
 ## Verification Steps
 
 ### Check Prometheus Targets
