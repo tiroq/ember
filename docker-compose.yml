@@ -124,12 +124,8 @@ services:
       - ./process-exporter/process-exporter.yml:/config/process-exporter.yml:ro
       - /proc:/host/proc:ro
     privileged: true
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9256/metrics"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    # Note: healthcheck disabled - image is scratch/minimal with no shell or wget
+    # Service health can be verified via: curl http://localhost:9256/metrics
     networks:
       - ember
 
